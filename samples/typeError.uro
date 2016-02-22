@@ -1,0 +1,66 @@
+data X<X> where
+
+data Z<X,X> where
+
+data List<T> where
+	empty<T>() : List[T]
+	cons<T>(T, List[T]) : List[T]
+
+function fun<T>() : List[T] where
+	fun<T>() = cons[Bool](True, empty[Nat]())
+
+codata S where
+	S.a[Nat]() : Nat
+
+data L1<T> where
+	empty<S>() : L1[T] 
+
+data L2<T> where
+	empty<T>() : L2[S]
+
+data NestedList<T> where
+	empty<T>() : List[List[S]]
+
+-- no specialization (e.g. Bool, Int) as in C templates
+function addOne<T>(T) : T where
+	addOne[Nat](x) : succ(x)
+	addOne[Bool](x) : false()
+
+function noarg<T>() : T where
+
+-- error in argument type
+function lt1<T>(List[S]) : List[T] where
+        lt1<T>(ls) = empty[T]()
+
+-- error in return type
+function lt2<T>(List[T]) : List[S] where
+        lt2<T>(ls) = empty[List<T>]()
+
+-- error in rhs
+function lt3<T>(List[T]) : List[T] where
+        lt3<T>(ls) = empty[S]()
+
+-- error in lhs
+function lt4<T>(List[T]) : List[T] where
+        lt4<S>(ls) = empty[T]()
+
+-- error empty type app
+function lt<T>(List[T]) : List[T] where
+        lt<T>(ls) = empty[]()
+
+-- error empty type abs
+function lt<>(List[T]) : List[T] where
+
+-- type abs in wrong place
+function a(List<T>) : T where
+
+function b(List[T]) : <T> where
+
+function d<T>(<T>) : <T> where
+
+-- no type abs annotated
+function c(List[T] : T
+
+function <A> tmmp(Stream[A], Nat[]): List[A] where
+    takeN(stream.tailc[A](), zero())  = empty[A]()
+  

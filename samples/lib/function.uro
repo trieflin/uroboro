@@ -1,0 +1,5 @@
+codata Function<A, B> where
+	Function[A,B].apply(A) : B
+
+codata Function2<A,B,C> where
+    Function2[A,B,C].apply2(A,B) : C

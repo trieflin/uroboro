@@ -1,0 +1,78 @@
+{- Requires lib/nat.uro, lib/bool.uro, lib/function.uro -}
+
+data List<A> where
+    empty(): List[A]
+    cons(A, List[A]): List[A]
+
+function <A> append(List[A], List[A]) : List[A] where
+    append(empty[A](), l) = l
+    append(l, empty[A]()) = l
+    append(cons[A](x,l1), l2) = cons[A](x, append[A](l1,l2)) 	
+
+-- partial function: non empty
+function <A> head(List[A]) : A where
+    head(cons[A](h,tl)) = h
+     
+function <A> last(List[A]) : List[A] where
+    last(cons[A](h, empty[A]())) = h
+    last(cons[A](h, tl)) = last[A](tl)
+    
+function <A> tail(List[A]) : List[A] where
+    tail(cons[A](h,tl)) = tl
+    
+function <A> init(List[A]) : List[A] where
+    init(cons[A](h, empty[A]())) = empty[A]()
+    init(cons[A](h, tl)) = cons[A](h, init[A](tl))
+
+--function <A> uncons(List[A]) : Maybe(A, List[A])
+
+function <A> take(Nat[], List[A]) : List[A] where
+    take(zero(), l) = empty[A]()
+    take(succ(x), cons[A](h,tl)) = cons[A](h, take[A](x,tl))
+
+function <A> drop(Nat, List[A]) : List[A] where
+    drop(zero(), l) = l
+    drop(succ(x), cons[A](h,tl)) = drop[A](x,tl)
+
+ 
+function <A> replicate(Nat, A) : List[A] where
+    replicate(zero(), a) = empty[A]()
+    replicate(succ(x), a) = cons[A](a, replicate[A](x,a))    
+
+function <A> null(List[A]) : Bool where
+    null(empty[A]()) = true()
+    null(cons[A](x, y)) = false()
+
+function <A> length(List[A]) : Nat where
+    length(empty[A]()) = zero()
+    length(cons[A](x, y)) = succ(length[A](y))
+
+function <A> index(List[A],Nat) : A where
+	index(cons[A](h,tl), zero()) = h
+	index(cons[A](h,tl), succ(x)) = index[A](tl,x)
+
+function <A,B> map (Function[A, B], List[A]) : List[B] where 
+	map(f, empty[A]()) = empty[B]()
+	map(f, cons[A](x, xs)) = cons[B](f.apply[A,B](x), map[A,B](f, xs))
+	
+function <A> reverse(List[A]) : List[A] where
+    reverse(empty[A]()) = empty[A]()
+    reverse(cons[A](x,xs)) = append[A](reverse[A](xs), cons[A](x,empty[A]()))
+    --foldl (flip (:)) []
+    
+function <A,B> foldl(Function2[B,A,B], B, List[A]) : List[B] where    
+
+-- not ordered here
+function <T> insert (T, List[T]) : List[T] where
+    insert (elem, list) = cons[T](elem, list)
+
+-- not with predicate
+function <T> find(T, List[T]) : Bool where
+    find(elem, empty[T]()) = false()
+    find(elem, cons[T](elem, list)) = true()
+    find(elem, cons[T](other, list)) = false()
+
+function <A,B,C> zipWith(Function2[A,B,C], List[A], List[B]) : List[C] where
+    zipWith(f, empty[A](), b) = empty[C]()
+    zipWith(f, a, empty[B]()) = empty[C]()
+    zipWith(f, cons[A](a,la), cons[B](b,lb)) = cons[C](f.apply2[A,B,C](a,b),zipWith[A,B,C](f, la, lb))

@@ -1,0 +1,21 @@
+data Sum<U,V> where
+--	first<U> : Sum[U,V]
+--	second<V> : Sum[U,V]
+
+data Tmp<U> where
+	one(Sum[List[Nat[]],List[U]]) : Tmp[U]
+
+data Pair<U, V> where
+	pair(U, V) : Pair[U, V]
+
+function <U,V> swap(Pair[U, V]) : Pair[V, U] where
+        swap(pair[U,V](u,v)) = pair[V,U](v, u)
+
+function <U> test2(Pair[U, Nat[]]) : Nat[] where
+        test2(pair[U, Nat[]](u,x)) = zero()
+
+function <U,V> fst(Pair[U, V]) : U where
+	fst(pair[U,V](u,v)) = u
+
+function <U,V> snd(Pair[U, V]) : V where
+	snd(pair[U,V](u, v)) = v

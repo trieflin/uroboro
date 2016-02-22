@@ -1,0 +1,52 @@
+name:           UroboroP
+version:        0.1
+synopsis:       Language with Data and Codata (Pattern and Copattern Matching)
+license:        MIT
+author:         Tobias Weber, Julia Trieflinger, Tillmann Rendel
+category:       Language
+cabal-version:  >=1.10
+build-type:     Simple
+maintainer:     Julia Trieflinger
+license-file:   LICENSE
+description:    Simple language for having data and codata constructs for de- and refunctionalization.
+
+library
+  exposed-modules: 
+                   Uroboro.Checker,
+                   Uroboro.Error,
+                   Uroboro.ExternalSyntax,
+                   Uroboro.FillRules,
+                   Uroboro.FillSigma,
+                   Uroboro.InternalSyntax,
+                   Uroboro.Interpreter,
+                   Uroboro.Location,
+                   Uroboro.Parser,
+                   Uroboro.PrettyPrinter,
+                   Uroboro.Token,
+                   Uroboro.TransformExtToInt
+  hs-source-dirs:   src                  
+  build-depends:    base >= 4 && < 5, parsec >= 3.1 && <3.2
+  default-language: Haskell2010   
+
+test-suite tests
+  type:             exitcode-stdio-1.0
+  hs-source-dirs:   src, test
+  main-is:          Spec.hs
+  other-modules:    
+                    SpecHelper,
+                    Uroboro.TokenSpec,
+                    Utils
+  build-depends:
+      base    == 4.*
+    , UroboroP
+    , parsec >= 3.1 && <3.2
+    , hspec >= 2.2
+  default-language:    Haskell2010
+
+executable UroboroP
+  hs-source-dirs:  
+                   exec, 
+                   src
+  main-is:         Main.hs
+  build-depends:   base >= 4 && < 5, parsec >= 3.1 && <3.2, UroboroP
+  default-language:    Haskell2010

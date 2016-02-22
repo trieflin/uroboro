@@ -1,0 +1,30 @@
+data Bool where
+	true() : Bool
+	false(): Bool
+
+function id(Bool): Bool where
+    id(a) = a
+    
+function not(Bool): Bool where
+    not(true()) = false()
+    not(false()) = true()
+
+function and(Bool, Bool) : Bool where
+    and(true(), a) = a
+    and(false(), a) = false()
+
+function or(Bool, Bool) : Bool where
+    or(true(), a) = true()
+    or(false(), a) = a
+
+function eq(Bool, Bool) : Bool where
+    eq(true(), true()) = true()
+    eq(false(), false()) = true()
+    eq(true(), false()) = false()
+    eq(false(), true()) = false()
+
+function notEq(Bool, Bool) : Bool where
+    notEq(a,b) = not(eq(a,b))
+
+function otherwise() : Bool where
+    otherwise() = true()

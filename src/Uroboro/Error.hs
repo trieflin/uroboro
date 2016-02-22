@@ -1,33 +1,34 @@
-{-|
-Description : Store and format error messages
--}
-module Uroboro.Error
-    ( Error (MakeError)
-    , Location (MakeLocation)
-    , failAt
-    ) where
+module Uroboro.Error where
 
 import Data.List (intercalate)
+import Text.Parsec.Error (ParseError, errorPos, showErrorMessages, errorMessages)
 
-data Error = MakeError Location String
+import Uroboro.Location
 
-data Location = MakeLocation FilePath Int Int
+data Error = MakeError Location String String
+  
+-- |Fail the monad, but with location.
+failAt :: Location -> String -> String -> Either Error a
+failAt pos errorType message = Left $ MakeError pos errorType message
 
-instance Show Location where
-  show (MakeLocation name line column) =
-    intercalate ":"
-      [ name
-      , show line
-      , show column
-      ]
+-- | Convert error to custom error type
+convertError :: ParseError -> Error
+convertError err = MakeError location "ParseError" messages where
+  pos = errorPos err
+  location = convertLocation pos
+  messages = showErrorMessages
+               "or" "unknown parse error" "expecting"
+               "unexpected" "end of input"
+               (errorMessages err)
+
+-- intercalate xs xss: 
+-- inserts list xs in between lists in xss and concatenates the result
 
 instance Show Error where
-  show (MakeError location message) =
+  show (MakeError location errorType message) =
     intercalate ":"
       [ show location
-      , " Syntax Error"
+      , " " ++ errorType
       ] ++ (unlines $ map ("  " ++) $ lines $ message)
 
--- |Fail the monad, but with location.
-failAt :: Location -> String -> Either Error a
-failAt location message = Left $ MakeError location message
+            

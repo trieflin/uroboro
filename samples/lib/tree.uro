@@ -1,0 +1,9 @@
+{- Requires list -}
+
+data BinTree<T> where
+	leaf(T) : BinTree[T]
+	node(BinTree[T], T, BinTree[T]) : BinTree[T]
+
+function <T> treeToList(BinTree[T], List[T]) : List[T] where
+	treeToList(leaf[T](x), xs) = cons[T](x, xs)
+    treeToList(node[T](t1, x, t2), xs) = treeToList[T](t1, cons[T](x, treeToList[T](t2, xs)))

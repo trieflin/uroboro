@@ -1,0 +1,17 @@
+data Nat where
+	zero() : Nat
+	succ(Nat) : Nat -- should assert succ(x) = x+1,
+			--  semantic meaning is nowhere written
+
+function h<T>() : Nat where
+	h<T>() = zero()
+
+data Num where
+	TODO
+-- Church numerals as args cannot be expressed in HM
+-- because of type quantifier in arg
+-- HM: t = X, t->t; t-schema = t, forall a. t-scheme
+function exp(Num) : Num where
+	exp(TODO)
+
+

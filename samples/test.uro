@@ -1,0 +1,133 @@
+{- Requires nat.uro, bool.uro, list.uro -}
+
+function <X,Y> addXY(X,X) : Y where
+-- TODO Exception: Prelude.!!: index too large	addXY(a,b) = addXY[Nat[]](zero(),zero())
+-- OK ERR	addXY(a,b) = addXY[Nat[],Nat[]](zero(),zero())
+	addXY(a,b) = addXY[Nat[],Y](zero(),zero())
+
+function <X> id(X) : X where
+	id(x) = x
+
+function natId(Nat[]) : Nat[] where
+	natId(x) = id[Nat[]](x)
+
+	
+--OK ERR	conss(S, List[T]) : List[T] -- Missing Definition of S
+--OK ERR TODO	emptya() : List --ParseError :-/ -> should be TypingError
+--OK ERR	empty() : List[T]  -- shadowed def
+--OK ERR	emptyb() : List<T> -- expecting type app
+--OK ERR	emptye() : List[]  -- Definition Mismatch with return type 
+--OK ERR	emptys() : List[S] -- Definition Mismatch with return type
+--OK ERR	conss1(S, List[T]) : List[T] -- Missing Definition of S
+--OK ERR	conss2(T, List[S]) : List[T] -- Missing Definition of S
+--OK ERR	conse(T, List[]) : List[T] -- Type Mismatch
+
+-- OK ERR function <T> length(List[S]) : Nat[] where
+-- TODO  unexpected '[' expecting top level definition or end of input
+-- length(cons[A](x, y)) = succ(length[A] y) -- missing () around y
+-- OK ERR	length(cons[A](x, x)) = succ(length[A]( y))
+
+
+
+
+
+{-# LANGUAGE GADTs #-}
+module Exp
+where
+
+data Exp a where
+  Num  :: (Num a) => a -> Exp a
+  Bool :: Bool -> Exp Bool
+  Plus :: (Num a) => Exp a -> Exp a -> Exp a
+  If   :: Exp Bool -> Exp a -> Exp a -> Exp a 
+  Lt   :: (Num a, Ord a) => Exp a -> Exp a -> Exp Bool
+  Lam  :: (a -> Exp b) -> Exp (a -> b)   -- higher order abstract syntax
+  App  :: Exp (a -> b) -> Exp a -> Exp b
+ -- deriving (Show) -- failse
+
+eval :: Exp a -> a
+eval (Num n)      = n
+eval (Bool b)     = b
+eval (Plus e1 e2) = eval e1 + eval e2
+eval (If p t f)   = eval $ if eval p then t else f
+eval (Lt e1 e2)   = eval e1 < eval e2
+eval (Lam body)   = \x -> eval $ body x
+eval (App f a)    = eval f $ eval a
+
+instance Eq a => Eq (Exp a) where
+  e1 == e2 = eval e1 == eval e2
+
+instance Show (Exp a) where
+  show e = "<exp>" -- very weak show instance
+
+instance (Num a) => Num (Exp a) where
+  fromInteger = Num
+  (+) = Plus
+  
+  -- https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/data-type-extensions.html
+function lengthNat(List[Nat[]]) : Nat[] where
+	lengthNat(empty[Nat[]]()) = zero()
+	lengthNat(cons[Nat[]](x, y)) = succ(lengthNat(y))
+
+function natbool(Nat[], Bool[], Nat[]) : Nat[] where
+-- TODO TypingError  Type Mismatch
+--   expected type: TypeT ../samples/fib.uro:44:25 "Bool" []
+--   actual type: TypeT ../samples/fib.uro:44:18 "Nat" []
+--	natbool(x,x,y) = y
+--	natbool(x,y,x) = y
+	natbool(x,y,x) = x
+
+--OK ERR function <X> isEmptyList(List[T]) : Bool[] where --Missing Definition of "T"
+function <X> isEmptyList(List[X]) : Bool[] where
+	isEmptyList(empty[X]()) = true()
+	isEmptyList(cons[X](hd, tl)) = false()
+-- OK ERR	isEmptyList(cons[Y](hd, tl)) = false()	
+-- OK ERR	isEmptyList(x) = x	
+-- OK ERR	isEmptyList(empty[T]()) = true()
+	
+	
+
+function add2(Nat[], Nat[]) : Nat[] where
+-- OK ERR	add2(zerox(), x) = x
+-- OK ERR	add2(zero(), x) = zerox[]()
+-- OK ERR   add21(x,y)=zero()
+-- OK ERR	add2(zero(), x) = y
+-- OK ERR	add2(a,b) = add2(a,c)
+-- OK ERR	add2(succ(a), b) = add2(a, succ(c))
+-- OK ERR	add2(zero(), x) = true()
+-- OK ERR	add2(zero(), true()) = zero()
+--unexpected '<' expecting top level definition or end of input
+--OK ERR TODO MSG add2(x,y)=zero<>()
+	add2(zero(), x) = x 
+	add2(succ(x),y) = add2(x,succ(y)) 
+
+function <X> addX (X,X) : X where
+	addX(a,b) = addX[X](a,b)
+-- 	TypingError  Type Mismatch expected type: "X" actual type: "Nat" 
+-- TODO  addX(a,b) = addX[Nat[]](a,b)
+-- OK ERR	addX(a,b) = addX[Nat[]](zero(),zero())
+
+
+codata Z where
+	Z.toNatStream() : Stream[Nat[]]
+	Z.something() : Z[]
+
+function cycleNats(Nat[]) : Stream[Nat[]] where
+    cycleNats(x).headc[Nat[]]()       = x
+    cycleNats(zero()).tailc[Nat[]]()  = cycleNats(succ(succ(succ(zero()))))
+    cycleNats(succ(x)).tailc[Nat[]]() = cycleNats(x)
+    
+function <T> getFromStream(Stream[T]) : Z[] where
+	getFromStream(stream).toNatStream() = cycleNats(zero())   
+
+codata Q<T> where
+	Q[T].q() : T -- Nat
+
+function g() : Q[Nat[]] where
+	g().q[Nat[]]() = g().q[Nat[]]() --zero() 
+
+
+
+-- let input = readFile "samples/fib.uro" in input >>=   eitherIO . (parseFile "kl")
+
+	

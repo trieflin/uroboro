@@ -1,0 +1,22 @@
+{- Requires lib/bool.uro -}
+
+data Nat where
+    zero() : Nat
+    succ(Nat) : Nat
+
+function add(Nat, Nat): Nat where
+    add(x, zero()) = x
+    add(x, succ(y)) = add(succ(x), y)
+
+-- sub is a partial function
+function sub(Nat, Nat): Nat where
+    sub(x, zero()) = x
+    sub(succ(a), succ(b)) = sub(a,b)
+    
+function even(Nat): Bool where
+	even(zero()) = true()
+	even(succ(n)) = odd(n)
+
+function odd(Nat): Bool where
+	odd(zero()) = false()
+	odd(succ(n)) = even(n)

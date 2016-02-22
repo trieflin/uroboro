@@ -1,25 +1,42 @@
-{- Requires fib.uro -}
+{- requires nat, bool, list-}
 
-codata UnOp where
-  UnOp.apply(Nat): Nat
+data NestedList<T> where
+	emptyNL() : NestedList[T] --List[List[T]]
+	consNL(List[T], NestedList[T]) : NestedList[T]
 
-function add1(): UnOp where
-  add1().apply(x) = succ(x)
+function <T> insertIntoNestedList(List[T], NestedList[T]) : NestedList[T] where
+	insertIntoNestedList(empty[T](), ls) = ls
+	insertIntoNestedList(elem, ls) = consNL[T](elem,ls)
 
-data List where
-  empty(): List
-  cons(Nat, List): List
+-- application
 
-function map(UnOp, List): List where
-  map(f, empty()) = empty()
-  map(f, cons(x, xs)) = cons(f.apply(x), map(f, xs))
+function tmp(Nat[], List[Nat[]]) : List[Nat[]] where
+	tmp(zero(), ls) = ls
+	tmp(succ(x), ls) = tmp(x, cons[Nat[]](x, ls))
 
-function takeN(Nat, Stream): List where
-  takeN(zero(), f)  = empty()
-  takeN(succ(n), f) = cons(f.head(), takeN(n, f.tail()))
+function myElem() : Nat[] where
+	myElem() = succ(succ(zero()))
 
-function six(): Nat where
-  six() = succ(succ(succ(succ(succ(succ(zero()))))))
+function findInsertedNat(Nat[]) : Bool[] where
+	findInsertedNat(myElem) = find[Nat[]](myElem, insert[Nat[]](myElem, empty[Nat[]]()))
 
-function test(): List where
-  test() = map(add1(), takeN(six(), fib()))
+function natList(List[Nat[]]) : List[Nat[]] where
+	natList(empty[Nat[]]()) = insert[Nat[]](zero(), empty[Nat[]]())
+	natList(cons[Nat[]](hd, tl)) = insert[Nat[]](succ(zero()), tl)
+
+function <T> id(T) : T where
+	id(x) = x
+
+function <T> listId(List[T]) : List[T] where
+	listId(ls) = id[List[T]](ls)
+
+data Pair<U, V> where
+	pair(U, V) : Pair[U, V]
+
+function <U,V> zipUntilEmpty(List[U], List[V]) : List[Pair[U, V]] where
+	zipUntilEmpty(empty[U](), l) = empty[Pair[U,V]]()
+	zipUntilEmpty(l, empty[V]()) = empty[Pair[U,V]]()
+	zipUntilEmpty(cons[U](a,l1), cons[V](b,l2)) = cons[Pair[U,V]](pair[U,V](a,b), zipUntilEmpty[U,V](l1,l2))
+
+
+

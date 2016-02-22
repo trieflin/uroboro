@@ -6,7 +6,7 @@ An Implementation of a Language with Pattern and Copattern Matching
 	cabal sandbox init
 	cabal install --jobs --enable-tests
 	cabal test
-	cabal run -- samples/fib.uro -- "fib().head()"
+	cabal run -- samples/fib.uro -- "fib().headc()"
 
 ## Documentation
 

@@ -1,0 +1,17 @@
+{- Requires list, tree, function, nat, stream -}
+
+function etree() : BinTree[Nat[]] where
+	etree() = node[Nat[]](node[Nat[]](leaf[Nat[]](succ(zero())),zero(),leaf[Nat[]](succ(succ(zero())))), succ(zero()), leaf[Nat[]](zero()))
+
+function add1(): Function[Nat[],Nat[]]  where
+    add1().apply[Nat[],Nat[]](x) = succ(x)
+    
+function adder(Nat[]): Function[Nat[],Nat[]] where
+    adder(x).apply[Nat[],Nat[]](y) = add(x, y)
+    
+function mapadd1(List[Nat[]]):List[Nat[]] where
+	mapadd1(ls) = map[Nat[],Nat[]](add1(),ls)
+
+function zeroes(): Stream[Nat[]] where
+    zeroes().headc[Nat[]]() = zero()
+    zeroes().tailc[Nat[]]() = zeroes()

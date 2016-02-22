@@ -1,0 +1,21 @@
+{-- requires lib/function.uro, lib/nat.uro, lib/list.uro -}
+
+codata Stream<A> where
+    Stream[A].headc() : A
+    Stream[A].tailc() : Stream[A]
+
+function <A> cycle(List[A]) : Stream[A] where
+    cycle(cons[A](x,xs)).headc[A]() = x
+    cycle(cons[A](x,xs)).tailc[A]() = cycle[A](append[A](xs, cons[A](x,empty[A]())))
+    
+function <A,B,C> zipWithStream(Function2[A,B,C], Stream[A], Stream[B]) : Stream[C] where
+    zipWithStream(f, a, b).headc[C]() = f.apply2[A,B,C](a.headc[A](), b.headc[B]())
+    zipWithStream(f, a, b).tailc[C]() = zipWithStream[A,B,C](f, a.tailc[A](), b.tailc[B]())
+
+function <A> takeN(Stream[A], Nat[]): List[A] where
+    takeN(stream, zero())  = empty[A]()
+    takeN(stream, succ(n)) = cons[A](stream.headc[A](), takeN[A](stream.tailc[A](),n))
+
+function <A,B> mapStream(Function[A,B], Stream[A]): Stream[B] where
+    mapStream(f, s).headc[A]() = f.apply[A,B](s.headc[A]())
+    mapStream(f, s).tailc[A]() = mapStream[A,B](f, s.tailc[A]())

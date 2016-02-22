@@ -1,0 +1,8 @@
+
+    
+data Tes where
+   tes0() : Tes
+   tes1(Tes) : Tes
+   
+function ab(Tes) : Tes where
+    ab(a) = ab(a)

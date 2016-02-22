@@ -11,3 +11,7 @@ cabal-dev
 cabal.sandbox.config
 cabal.config
 .DS_Store
+.cabal-sandbox
+.dist-buildwrapper
+.project
+.setings
