@@ -188,7 +188,7 @@ spec = do
         it "accepts wellformed definitions" $ 
             uroparseSat parseDef listDefPoly
         it "rejects" $ 
-            uroparseRej parseRule listNotDefPoly
+            uroparseRej parseRule listSyntaxErrPoly
     describe "command line" $ do
         it "ignores whitespace" $ 
             parseExpression "" "  x  " `shouldSatisfy` (\x -> case x of
