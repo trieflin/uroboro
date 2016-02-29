@@ -6,8 +6,7 @@ import SpecHelper
 import Uroboro.Error
 
 spec :: Spec
-spec = do
-  describe "Token" $ do
+spec =  describe "Token" $ do
     context "when looking for comments" $ do
         it "recognizes end-of-line comments starting with --" $ do
             whiteSpace `shouldAccept` "-- comment \n"
@@ -17,9 +16,10 @@ spec = do
             whiteSpace `shouldReject` "{- comment -}foo"
         it "recognizes nested comments" $ do
             whiteSpace `shouldAccept` "{- {- -} -}"
+            whiteSpace `shouldReject` "{-"
+            whiteSpace `shouldReject` "-}"
             whiteSpace `shouldReject` "{- {- -}"
-        it "recognizes {-# LINE #-} pragmas" $ do
-            whiteSpace `shouldAccept` "{-# LINE 5 \"foo\" #-}\n"
+            whiteSpace `shouldReject` "{- -} -}"
         it "recognizes invalid pragmas as comments" $ do
             whiteSpace `shouldAccept` "{-# #-}"
             whiteSpace `shouldAccept` "{-# FOO #-}"
@@ -29,6 +29,9 @@ spec = do
             whiteSpace `shouldAccept` "{-# LINE 5 foo #-}"
             whiteSpace `shouldAccept` "{-# LINE 5 \"foo #-}"
             whiteSpace `shouldAccept` "{-# LINE \"foo\" #-}"
+        it "recognizes {-# LINE #-} pragmas" $ do
+            whiteSpace `shouldAccept` "{-# LINE 5 \"foo\" #-}\n"
+            -- TODO shouldReject (at the moment there are no pragmas)
     context "when looking for a keyword" $ do
         it "accepts the keyword" $ do
             reserved "codata" `shouldAccept` "codata"
@@ -51,27 +54,27 @@ spec = do
             identifier `shouldAccept` "datatype"
             identifier `shouldAccept` "functional"
             identifier `shouldAccept` "whereas"
-    context "when looking for brackets" $ do
+    context "when looking for brackets" $ 
         it "accepts bracket-pairs" $ do
             parens (commaSep identifier) `shouldAccept` "()"
             parens (commaSep identifier) `shouldAccept` "(a,b,c)"
-            parens (commaSep identifier) `shouldReject` ")("
             parens (commaSep identifier) `shouldReject` "("
             parens (commaSep identifier) `shouldReject` ")"
+            parens (commaSep identifier) `shouldReject` ")("
             parens (commaSep identifier) `shouldReject` "(,b,c)"
             angles (commaSep identifier) `shouldAccept` "<>"
             angles (commaSep identifier) `shouldAccept` "<a,b,c>"
+            angles (commaSep identifier) `shouldReject` "<"
+            angles (commaSep identifier) `shouldReject` ">"
             angles (commaSep identifier) `shouldReject` "><"
-            angles (commaSep identifier) `shouldReject` ">"
-            angles (commaSep identifier) `shouldReject` ">"
             angles (commaSep identifier) `shouldReject` "<,b,c>"
             brackets (commaSep identifier) `shouldAccept` "[]"
             brackets (commaSep identifier) `shouldAccept` "[a,b,c]"
-            brackets (commaSep identifier) `shouldReject` "]["     
             brackets (commaSep identifier) `shouldReject` "["
             brackets (commaSep identifier) `shouldReject` "]"
+            brackets (commaSep identifier) `shouldReject` "][" 
             brackets (commaSep identifier) `shouldReject` "[,b,c]"      
-    context "when looking for symbols" $ do
+    context "when looking for symbols" $ 
         it "accepts dot, colon, eq" $ do
             colon `shouldAccept` ":"
             dot `shouldAccept` "."

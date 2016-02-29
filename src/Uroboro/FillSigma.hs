@@ -22,17 +22,40 @@ fillSigma sgm def = do
     mismatch' sgm0 def
 
 shadowedAbs :: Sigma -> Location -> TypeAbstractions -> String -> Either Error Sigma
-shadowedAbs sgm loc abss ident 
-    | ident `elem` map absAbs abss = tyErrAbs loc abss ident
-    | otherwise                    = return sgm
+shadowedAbs sgm loc abss name 
+    | not $ null shadowedAbsLst = tyErrAbs (absLoc (head shadowedAbsLst)) abss name --name `elem` map absAbs abss
+    | otherwise                 = return sgm
+    where 
+        shadowedAbsLst = takeWhile (\a -> absAbs a == name) abss
 
---tauIsInTypevar :: String -> Sigma -> EST.Type -> Either Error Sigma
---tauIsInTypevar tau sgm ty = case ty of
-  --  EST.TypeVar loc tv -> if tau == tv 
-    --                  then tyErrTauIsTypevar loc tau tv
-      --                else return sgm
-  --  EST.TypeT _ tau apss  -> foldM (tauIsInTypevar tau) sgm apss                
---
+--shadowedTauSig' :: Sigma -> EST.Def -> Either Error Sigma
+--shadowedTauSig' sgm def@(EST.Def loc abss nature)
+--    | not $ null shadowedList = tyErrMultDecl loc (show def) (show shadowedList)
+--    | otherwise               = do
+--                                  sgm' <- shadowedAbs sgm0 loc (map toAbs abss) name
+--                                  sgm1 <- foldM (shadowedSig abss isS0) sgm' sigs
+--                                  return sgm
+--    where
+--        addTauToSgm tau = sgm{sgmTypeNames = toTauAbs tau abss : sgmTypeNames sgm } 
+--        calcShadowedList tau = lookupNameForLoc sgm (EST.tauTau tau)
+--        mySigs :: EST.Sig a => a -> a
+--        mySigs sig = sig
+--        (shadowedList, sigs, sgm0, isS0, name) = case nature of
+--                EST.DatDefNature tau sigs  -> (calcShadowedList tau, map mySigs sigs, addTauToSgm tau, True, EST.tauTau tau)
+--                EST.CodDefNature tau sigs  -> (calcShadowedList tau, map mySigs sigs, addTauToSgm tau, False, EST.tauTau tau)
+--                EST.FunDefNature sig rules -> ([], [mySigs sig], sgm, any EST.checkNeg rules, EST.idId (EST.sigId sig))
+
+shadowedSig :: EST.Sig a => EST.TypeAbstractions -> Bool -> Sigma -> a -> Either Error Sigma
+-- TODO rename isS0
+shadowedSig abss isS0 sgm estSig
+    | not $ null shadowedList = tyErrDuplTySigs (EST.sigLoc estSig) (show (EST.sigId estSig)) (show shadowedList)
+    | otherwise = do
+                    sgm1 <- shadowedAbs sgm (EST.idLoc sigId) (map toAbs abss) (EST.idId(EST.sigId estSig))
+                    return sgm1{ sgmSigs = toSig isS0 abss estSig : sgmSigs sgm1 }
+    where
+        sigId = EST.sigId estSig
+        ident = EST.idId sigId
+        shadowedList = lookupNameForLoc sgm (EST.idId (EST.sigId estSig))
 
 shadowedTauSig :: Sigma -> EST.Def -> Either Error Sigma
 shadowedTauSig sgm def@(EST.Def loc abss (EST.DatDefNature tau sigs))
@@ -42,7 +65,7 @@ shadowedTauSig sgm def@(EST.Def loc abss (EST.DatDefNature tau sigs))
         sgm1 <- foldM (shadowedConSig abss) sgm0 sigs
         return sgm1{sgmTypeNames = toTauAbs tau abss : sgmTypeNames sgm1 }
     where 
-        shadowedList = lookupNameForLoc sgm (EST.tauTau tau)--(EST.tauAbsTau tauabs)
+        shadowedList = lookupNameForLoc sgm (EST.tauTau tau)
 shadowedTauSig sgm def@(EST.Def loc abss (EST.CodDefNature tau sigs))
     | not $ null shadowedList = tyErrMultDecl loc (show def) (show shadowedList)
     | otherwise = do
@@ -80,9 +103,9 @@ shadowedFunSig abss sgm estSig@(EST.FunSig loc ident _ _ _) rules
 
 mismatch' :: Sigma -> EST.Def -> Either Error Sigma
 mismatch' sgm def 
-    = case def of
+    = case def of 
         EST.Def loc abss (EST.DatDefNature tau sigs) -> mis (loc, fromTauAbs2Type tau abss, map (toType . EST.cSigRet) sigs)
-        EST.Def loc abss (EST.CodDefNature tau sigs)  -> mis (loc, fromTauAbs2Type tau abss, map toType [t | EST.DesSigNature t <- (map EST.dSigNature sigs)])
+        EST.Def loc abss (EST.CodDefNature tau sigs) -> mis (loc, fromTauAbs2Type tau abss, map toType [t | EST.DesSigNature t <- map EST.dSigNature sigs])
         EST.Def loc _ (EST.FunDefNature (EST.FunSig _ ident _ _ _) ruls) -> mis (loc, ident, map (EST.copId . EST.ruleCop) ruls)
     where 
         mis :: Eq a => Show a => (Location , a , [a]) -> Either Error Sigma

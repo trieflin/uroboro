@@ -14,29 +14,36 @@ import Uroboro.ExternalSyntax
 -- | Parser a = ParsecT String () Identity a
 -- |    streams Strings, has user state type Unit, underlying monad Identity and return type is type Parser a = Parsec String () a
 
+-- | Use up all input for one parser.
+exactly :: Parser a -> Parser a
+exactly parser = whiteSpace *> parser <* eof
+
 -- | Parse whole file.
 parseFile :: FilePath -> String -> Either Error [Def]
-parseFile = uroparse $ whiteSpace *> parseDef <* eof 
+parseFile = uroparse $ exactly parseDef
 
 -- | Parse expression.
 parseExpression :: FilePath -> String -> Either Error Exp
-parseExpression = uroparse $ whiteSpace *> parseExp <* eof 
+parseExpression = uroparse $ exactly parseExp
 
--- | Parse something. --TODO inline ?
+-- | Parse something. 
 uroparse :: Parser a -> FilePath -> String -> Either Error a
 uroparse parser fname input = left convertError $ parse parser fname input
+
 
 -- |Parse "(p, ...)".
 args :: Parser a -> Parser [a]
 args p = parens (commaSep p) <?> "( arguments )"
 
--- |Parse "<p, ...>". : [String]
---typeabss :: Parser a -> Parser [a]
+-- |Parse "<p, ...>". : [Abs]
 typeabss = angles (commaSep abst) <?> "< type abstractions >"
 
 -- |Parse "[p, ...]". : [Type]
---typeapps :: Parser a -> Parser [a]
 typeapps = brackets (commaSep ttyp) <?> "[ type applications ]"
+
+
+abst :: Parser Abs
+abst = liftLoc Abs identifier <?> "abs"
 
 ttyp :: Parser Type
 ttyp = choice [try typt, typvar] <?> "type (typet or typevar)"  
@@ -44,15 +51,15 @@ typt :: Parser Type
 typt = liftLoc TypeT tau <*> typeapps <?> "type t"
 typvar :: Parser Type
 typvar = liftLoc TypeVar identifier <?> "typevariable"
-abst :: Parser Abs
-abst = liftLoc Abs identifier <?> "abs"
 tau :: Parser Tau
 tau = liftLoc Tau identifier <?> "tau" 
+
 ident :: Parser Identifier
 ident = liftLoc Identifier identifier <?> "identifier"
 
 typeabsopt = option [] typeabss
 typeappopt = option [] typeapps
+
 
 -- |Parse top-level definition (data, codata or function)
 parseDef :: Parser [Def]
@@ -60,7 +67,7 @@ parseDef =  many (choice [datdef, codef,  fundef] <?> "top level definition" )
     where
         datdef = liftLoc (toDatDef Def) (reserved "data" *> tau) <*> typeabsopt <*> where1 conSig <?> "data type definition"
         codef  = liftLoc (toCodDef Def) (reserved "codata" *> tau) <*> typeabsopt <*> where1 desSig <?> "codata type definition"           
-        fundef = liftLoc (toFunDef Def) (reserved "function" *> typeabsopt) <*> funSig <*> where1 rule <?> "function definition"
+        fundef = liftLoc (toFunDef Def) (reserved "function" *> typeabsopt) <*> funSig <*> where1 parseRule <?> "function definition"
         
         toDatDef make l t a s = make l a (DatDefNature t s)
         toCodDef make l t a s = make l a (CodDefNature t s)
@@ -72,12 +79,13 @@ parseDef =  many (choice [datdef, codef,  fundef] <?> "top level definition" )
         desSig = liftLoc (toDesSig DesSig) (tauToType <* dot) <*> ident <*> args ttyp <*> (colon *> ttyp) <?> "destructor signature"
         funSig = liftLoc (toFunSig FunSig) ident <*> args ttyp <*> (colon *> ttyp) <?> "function signature"
         tauToType = liftLoc TypeT tau <*> typeappopt 
-                 
-        rule = liftLoc Rule parseCoPat <*> (eq *> parseExp) <?> "rule"
 
         toConSig make l id args ret = make l id args ret ConSigNature
         toDesSig make l t id args ret = make l id args ret (DesSigNature t)
         toFunSig make l id args ret = make l id args ret FunSigNature
+
+parseRule :: Parser Rule
+parseRule = liftLoc Rule parseCoPat <*> (eq *> parseExp) <?> "rule"
         
 -- |Parse copattern.
 parseCoPat :: Parser Cop
@@ -92,6 +100,7 @@ parseCoPat = choice [try descop,appcop] <?> "copattern"
     toDesCop make loc ident pats dcops = make loc ident pats (DesCopNature dcops)
     toAppCop make loc ident pats = make loc ident pats AppCopNature
 
+
 -- |Parse pattern.
 parsePat :: Parser Pat
 parsePat = choice [try con, var] <?> "pattern"
@@ -102,12 +111,16 @@ parsePat = choice [try con, var] <?> "pattern"
 
 -- |Parse expression
 parseExp :: Parser Exp
-parseExp = choice [des, app, var] <?> "expression" 
+parseExp = choice [des, toExp app, toExp var] <?> "expression" 
   where 
-    des = try (liftLoc DesExp (choice [app, var]) <*> many1 (dot *> liftLoc DExp ident <*> typeappopt <*> args parseExp) <?> "des-exp")
-    app = try (liftLoc AppExp ident <*> typeappopt <*> args parseExp <?> "app-exp")
+    des = try (liftLoc DesExp (choice [app, var]) <*> many1 (dot *> liftLoc DExp ident <*> typeappopt <*> args expF) <?> "des-exp")
+    app = try (liftLoc AppExp ident <*> typeappopt <*> args expF <?> "app-exp")
     var = liftLoc VarExp ident <?> "var-exp"
     
+    toExp = liftM Expr 
+    expF = choice [toExp app, toExp var]
+ 
+   
 -- |Variant of liftM that also stores the current location
 -- constructs intern types for external abstract syntax tree
 -- fetching sourcepos for exception messages

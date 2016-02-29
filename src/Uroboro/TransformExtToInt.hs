@@ -19,30 +19,21 @@ toIdent (EST.Identifier loc ident) = Identifier loc ident
 toTauAbs :: EST.Tau -> EST.TypeAbstractions -> TauAbs
 toTauAbs tau abss = TauAbs (toTau tau) (map toAbs abss)
 
---toIdAbs :: EST.Identifier -> EST.TypeAbstractions -> IdAbs
---toIdAbs (EST.Identifier loc ident) abss = IdAbs loc ident (map toAbs abss)
-
---toIdAps :: EST.Identifier -> EST.TypeApplications -> IdAps
---toIdAps (EST.Identifier loc ident) aps = IdAps loc ident (map toType aps)  
-
 fromTauAps2Type :: EST.Tau -> EST.TypeApplications -> Type
 fromTauAps2Type tau@(EST.Tau loc _) aps  = TypeT loc (toTau tau) (map toType aps)
 
 fromTauAbs2Type :: EST.Tau -> EST.TypeAbstractions -> Type
 fromTauAbs2Type estTau abss = tau2Type (toTauAbs estTau abss)
 
---fromEstIdAbs2IdAps ::EST.Identifier -> EST.TypeAbstractions -> IdAps
---fromEstIdAbs2IdAps estId abss = fromIdAbs2IdAps (toIdAbs estId abss)
-
---toSig :: Bool -> [EST.Abs] -> EST.Sig a -> Sig
---toSig b abss sig = Sig (EST.sigLoc sig) (toIdent (EST.sigId sig)) (map toType args') (toType (EST.sigRet sig)) posneg (map toAbs abss)
-    --(EST.Sig loc ident args ret nature) = Sig loc ident (map toType args') (toType ret) posneg (map toAbs abss)
-  --  where
-    --    args = EST.sigArgs sig
-      --  (posneg, args') = case (EST.sigNature sig) of
-        --    EST.ConSigNature   -> (Pos, args)
-          --  EST.DesSigNature t -> (Neg, t:args)
-            --EST.FunSigNature   -> (if b then Neg else Pos, args)
+toSig :: EST.Sig a => Bool -> [EST.Abs] -> a -> Sig 
+--TODO rename isS0
+toSig b abss sig = Sig (EST.sigLoc sig) (toIdent (EST.sigId sig)) (map toType args') (toType (EST.sigRet sig)) posneg b (map toAbs abss)
+    where
+        args = EST.sigArgs sig
+        (posneg, args') = case EST.sigNature sig of 
+            EST.ConSigNature   -> (Pos, args)
+            EST.DesSigNature t -> (Neg, t:args)
+            EST.FunSigNature   -> (if b then Neg else Pos, args)
             
 toConSigs :: Bool -> [EST.Abs] -> EST.ConSig -> Sig
 toConSigs _ abss (EST.ConSig loc ident args ret nature) = 

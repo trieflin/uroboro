@@ -96,7 +96,9 @@ fillPat sgm ctx expTy (EST.VarPat loc estId) = do
     let ident = toIdent estId
     let ctx1 = addFrame2Ctx (TermBind (ident, expTy)) ctx
     -- estId already in ctx with different type named as actTy?
-    let actTy = lookupCtxTyBind ctx1 ident
+    actTy <- case lookupCtxTyBind ctx1 ident of
+                  Nothing     -> tyErrUnbound loc (show ident)
+                  Just (id,t) -> return t
     sgm1 <- checkIsSameType loc sgm ctx1 expTy actTy
     return (Pat loc (ident, expTy) VarPat, ctx1)       
 fillPat sgm ctx expTy (EST.AppPat loc estid estapss args) = do
@@ -109,14 +111,14 @@ fillPat sgm ctx expTy (EST.AppPat loc estid estapss args) = do
 
         
 fillExp :: Sigma -> Context -> Type -> EST.Exp -> Either Error Exp
-fillExp sgm ctx ty (EST.VarExp loc estId) = do 
+fillExp sgm ctx ty (EST.Expr (EST.VarExp loc estId)) = do 
     let ident = toIdent estId
-    case lookupCtxTyBind' ctx ident of
+    case lookupCtxTyBind ctx ident of
         Nothing -> tyErrUnbound loc (show ident)
         Just (id, ty') -> do 
             sgm1 <- checkIsSameType loc sgm ctx ty ty
             return $ Exp loc (ident, ty) VarExp
-fillExp sgm ctx ty (EST.AppExp loc estId estApss args) = do
+fillExp sgm ctx ty (EST.Expr (EST.AppExp loc estId estApss args)) = do
     let ident = toIdent estId
     let apss = map ((transformTypevarToTypeT sgm). toType) estApss
     (rargs, rret) <- replaceByIdAps sgm ident apss
@@ -127,7 +129,7 @@ fillExp sgm ctx ty (EST.DesExp loc fst dess@((EST.DExp l' id' apss' args'):lst))
     let ident = toIdent id'
     let apss = map ((transformTypevarToTypeT sgm). toType)  apss'
     (expectedArgsTypes, _) <- replaceByIdAps sgm ident apss
-    ist_fst <- fillExp sgm ctx (head expectedArgsTypes) fst
+    ist_fst <- fillExp sgm ctx (head expectedArgsTypes) (EST.Expr fst)
     exp <- foldM (fillDExp sgm ctx) ist_fst dess
     sgm1 <- checkIsSameType loc sgm ctx ty (snd (expIdTy exp))       
     return exp
@@ -143,12 +145,12 @@ fillDExp sgm ctx ist_fst@(Exp eLoc eIdTy eNature) (EST.DExp loc estid estapss ar
 
 -- |Infer the type of a term.
 inferExp :: Program -> Context -> EST.Exp -> Either Error Exp
-inferExp _ ctx (EST.VarExp loc name) = do
+inferExp _ ctx (EST.Expr (EST.VarExp loc name)) = do
     let ident = toIdent name
-    case lookupCtxTyBind' ctx ident of
+    case lookupCtxTyBind ctx ident of
         Nothing  -> tyErrUnbound loc (show ident)
         Just idty -> return (Exp loc idty VarExp)
-inferExp prog ctx (EST.AppExp loc estId estApss args) = do
+inferExp prog ctx (EST.Expr (EST.AppExp loc estId estApss args)) = do
     let sgm = prgSigma prog
     let ident = toIdent estId
     let apss = map ((transformTypevarToTypeT sgm). toType)  estApss
@@ -160,7 +162,7 @@ inferExp prog ctx (EST.DesExp loc fst dess@((EST.DExp l' id' apss' args'):lst)) 
     let ident = toIdent id'
     let apss = map toType apss'
     (expectedArgsTypes, _) <- replaceByIdAps sgm ident apss
-    ist_fst <- fillExp sgm ctx (head expectedArgsTypes) fst
+    ist_fst <- fillExp sgm ctx (head expectedArgsTypes) (EST.Expr fst)
     exp <- foldM (fillDExp sgm ctx) ist_fst dess
     return exp
 
@@ -196,7 +198,7 @@ replaceTyAbs abss apss t
 
 replaceByIdAps :: Sigma -> Identifier -> TypeApplications -> Either Error ([Type] , Type)
 replaceByIdAps sgm ident apss = 
-    case (getTypInfosForId sgm ident, getLookup1For sigAbs sgm ident) of
+    case (lookupTypInfosForId sgm ident, getLookup1For sigAbs sgm ident) of
       (Just (targs, ret), Just abss) -> do
         repArgs <- mapM (replaceTyAbs abss apss) targs
         repRet <- replaceTyAbs abss apss ret
@@ -205,7 +207,7 @@ replaceByIdAps sgm ident apss =
 
 
 getTypeInfos sgm ident loc = 
-    case getTypInfosForId sgm ident of
+    case lookupTypInfosForId sgm ident of
         Just (expectedArgsTypes, expectedRetTy) -> Right (expectedArgsTypes, expectedRetTy)
         Nothing -> tyErrUnbound loc (show ident)
 

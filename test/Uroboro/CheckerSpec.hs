@@ -27,7 +27,11 @@ parseFiles paths = do
       
 prelude :: IO Program
 prelude = parseFiles uroLib
-    
+
+
+--sFailCodDes = "codata <T> Stream[T] where Stream.head() :: A"
+
+ 
 -- |Context using prelude
 locUndef = MakeLocation "undef" 0 0
 c :: Context
@@ -289,4 +293,21 @@ spec = do
             inferExp p c e `shouldSatisfy` (\x -> case x of
               Right (Exp _ (Identifier _ "map", TypeT _ (Tau _ "List") [TypeT _ (Tau _ "Nat")  []]) (SExp  
                 [Exp _ (Identifier _ "f", TypeT _ (Tau _ "Function")  [TypeT _ (Tau _ "Nat")  [], TypeT _ (Tau _ "Nat")  []]) VarExp, Exp _ (Identifier _ "l", TypeT _ (Tau _ "List")  [TypeT _ (Tau _ "Nat") []]) VarExp])) -> True
-              _ -> False)            
+              _ -> False)
+    describe "polymorphism" $ do
+        it "TODO" $ do
+            p <- prelude    
+            defs <- parseString parseDef $ unlines
+                [ "function <X> id(X) : X where id(x) = x"
+                , "function natId(Nat) : Nat where natId(x) = id[Nat](x)"
+                ]
+            print "hallo1" 
+            print  $ foldM fillSigma (prgSigma p) defs   
+            sgm <- eitherIO $ foldM fillSigma (prgSigma p) defs
+            print "hallo2"
+            print sgm
+            print "hallo3" 
+            checkSigma sgm `shouldSatisfy` (\x -> case x of
+                Right _ -> True
+                _ -> False)
+        

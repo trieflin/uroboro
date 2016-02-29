@@ -154,14 +154,18 @@ instance Eq Pat where
     _ == _ = False     
 
 -- |Expression (Term).
-data Exp
+data ExpF
     -- |Variable.
     = VarExp Location Identifier
     -- |Constructor or function application.
     | AppExp Location Identifier TypeApplications [Exp]
+    deriving (Show)
+
+data Exp =
+    Expr ExpF   
     -- |Destructor application (Selection).
     -- Exp.IdAps(Exp*) 
-    | DesExp Location Exp [DExp] 
+    | DesExp Location ExpF [DExp] 
     deriving (Show)
 
 data DExp = DExp Location Identifier TypeApplications [Exp] deriving (Show)

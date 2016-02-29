@@ -38,34 +38,12 @@ instance Eq Abs where
 type TypeAbstractions = [Abs]    
 type TypeApplications = [Type]
  
-data TauAbs = TauAbs {
---    tauAbsLoc :: Location         -- location in source
-    tauAbsTau :: Tau              -- name of tau 
-  , tauAbsAbs :: TypeAbstractions -- forall abstractions
-  } deriving (Show)
-instance Eq TauAbs where
-    TauAbs {tauAbsTau = t1, tauAbsAbs = a1} == TauAbs {tauAbsTau = t2, tauAbsAbs = a2} = t1 == t2 && a1 == a2   
-
 data Identifier = Identifier {
       idLoc :: Location 
     , idId :: String 
     } deriving (Show)
 instance Eq Identifier where
     Identifier _ x1 == Identifier _ x2  = x1 == x2
-
---data IdAbs = IdAbs {
---    idAbsLoc :: Location          -- location in source
---  , idAbsId  :: Identifier        -- name of tau    
---  , idAbsAbs :: TypeAbstractions  -- forall abstractions
---  } deriving (Show)
-  
---data IdAps = IdAps {
---    idApsLoc :: Location          -- location in source
---  , idApsId  :: Identifier        -- name of tau        
---  , idApsAps :: TypeApplications  -- types
---  } deriving (Show)
---instance Eq IdAps where
---    IdAps {idApsId = t1, idApsAps = a1} == IdAps {idApsId = t2, idApsAps = a2} = t1 == t2 && a1 == a2   
 
 type IdType = (Identifier, Type)
 
@@ -90,6 +68,13 @@ data Sig = Sig {
 
 data TypeNature = Pos
     | Neg deriving (Show, Eq)
+
+data TauAbs = TauAbs {
+    tauAbsTau :: Tau              -- name of tau 
+  , tauAbsAbs :: TypeAbstractions -- forall abstractions
+  } deriving (Show)
+instance Eq TauAbs where
+    TauAbs {tauAbsTau = t1, tauAbsAbs = a1} == TauAbs {tauAbsTau = t2, tauAbsAbs = a2} = t1 == t2 && a1 == a2   
 
 data Sigma = Sigma {
       sgmTypeNames :: [TauAbs]  
@@ -164,19 +149,27 @@ instance Eq ExpNature where
 emptyContext :: Context
 emptyContext = []
 
+addFrame2Ctx :: Frame -> Context -> Context
+addFrame2Ctx frame ctx
+    | newFrameBind `elem` bindLs = ctx
+    | otherwise = frame : ctx
+    where (newFrameBind, bindLs) = case frame of 
+            TermBind (ident, _) -> (idId ident, [idId x | TermBind (x,_) <- ctx])
+            TypeBind (Abs _ var) -> (var, [x | TypeBind (Abs _ x) <- ctx])
+
 emptySigma :: Sigma 
 emptySigma = Sigma [][]
 
 emptyProgram :: Sigma -> Program
 emptyProgram sgm = Program sgm []
 
--- lookup
+-- lookup name in sigmas type names and signature names
 lookupNameForLoc :: Sigma -> String -> [Location]
 lookupNameForLoc sgm name = 
     map (\(TauAbs t a) -> tauLoc t) (filter (\tauabs -> name == tauTau (tauAbsTau tauabs)) (sgmTypeNames sgm)) 
     ++ map sigLoc (filter (\sig -> name == idId (sigName sig)) (sgmSigs sgm))         
 
-
+-- lookup type stored in sigma
 lookupTauAbs :: Sigma -> Tau -> Maybe [TauAbs] 
 lookupTauAbs sgm tau 
     | null ls = Nothing
@@ -188,59 +181,44 @@ lookup1TauAbs sgm tau = do
     tauabsls <- lookupTauAbs sgm tau
     Just (head tauabsls)
 
-lookupSigAps :: Sigma -> Identifier -> Maybe [Sig] 
-lookupSigAps sgm ident 
+-- lookup id in sig
+lookupSig :: Sigma -> Identifier -> Maybe [Sig] 
+lookupSig sgm ident 
     | null ls = Nothing
     | otherwise = Just ls 
     where ls = filter (\Sig{sigName=n} -> ident == n) (sgmSigs sgm)
 
 getLookup1For :: (Sig -> b) -> Sigma -> Identifier -> Maybe b
 getLookup1For fun sgm ident = do
-    sigls <- lookupSigAps sgm ident
+    sigls <- lookupSig sgm ident
     Just $ fun (head sigls) -- instead of head could be another function to choose sig...
    
-lookup1SigAps :: Sigma -> Identifier -> Maybe Sig
-lookup1SigAps = getLookup1For id 
+lookup1Sig :: Sigma -> Identifier -> Maybe Sig
+lookup1Sig = getLookup1For id 
     
-getRetTy :: Sigma -> Identifier -> Maybe Type
-getRetTy = getLookup1For sigRet
+lookupRetTy :: Sigma -> Identifier -> Maybe Type
+lookupRetTy = getLookup1For sigRet
        
-getArgTypes :: Sigma -> Identifier -> Maybe [Type]
-getArgTypes = getLookup1For sigArgs
+lookupArgTypes :: Sigma -> Identifier -> Maybe [Type]
+lookupArgTypes = getLookup1For sigArgs
 
-getTypInfosForId :: Sigma -> Identifier -> Maybe ([Type], Type)
-getTypInfosForId sgm ident = do 
-    targs <- getArgTypes sgm ident
-    ret <- getRetTy sgm ident
+lookupTypInfosForId :: Sigma -> Identifier -> Maybe ([Type], Type)
+lookupTypInfosForId sgm ident = do 
+    targs <- lookupArgTypes sgm ident
+    ret <- lookupRetTy sgm ident
     return (targs, ret)    
 
---TODO use smartconstructors, "ensure" ctx
-lookupCtxTyBind :: Context -> Identifier -> Type
-lookupCtxTyBind ctx ident = head [ t | TermBind (x,t) <- ctx, x == ident]
--- "safe" version
-lookupCtxTyBind' :: Context -> Identifier -> Maybe IdType
-lookupCtxTyBind' ctx ident 
+-- lookup id in context (only term bind identifiers)
+lookupCtxTyBind :: Context -> Identifier -> Maybe IdType
+lookupCtxTyBind ctx ident 
     | null teBindLs = Nothing
     | otherwise = Just (head teBindLs)
     where 
         teBindLs = [(x,t) | TermBind (x,t) <- ctx, x == ident]
 
-
+-- type transformations
 tau2Type :: TauAbs -> Type
 tau2Type (TauAbs tau abss) = TypeT (tauLoc tau) tau (map fromAbs2Typevar abss)
 
 fromAbs2Typevar :: Abs -> Type
 fromAbs2Typevar (Abs loc abss)= Typevar loc abss
-
---fromIdAbs2IdAps ::IdAbs -> IdAps
---fromIdAbs2IdAps (IdAbs loc ident abss) = IdAps loc ident (map fromAbs2Typevar abss)
-
-addFrame2Ctx :: Frame -> Context -> Context
-addFrame2Ctx frame ctx
-    | newFrameBind `elem` bindLs = ctx
-    | otherwise = frame : ctx
-    where (newFrameBind, bindLs) = case frame of 
-            TermBind (ident, _) -> (idId ident, [idId x | TermBind (x,_) <- ctx])
-            TypeBind (Abs _ var) -> (var, [x | TypeBind (Abs _ x) <- ctx])
-        
-   
