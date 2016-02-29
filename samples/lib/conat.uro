@@ -1,16 +1,16 @@
 {- Requires lib/bool.uro -}
 
 codata CoNat where
-    CoNat.coAdd(CoNat[]) : CoNat[]
-    CoNat.coEven() : Bool[]
-    CoNat.coOdd() : Bool[]
+    CoNat.coAdd(CoNat) : CoNat
+    CoNat.coEven() : Bool
+    CoNat.coOdd() : Bool
     
-function coZero() : CoNat[] where
+function coZero() : CoNat where
     coZero().coAdd(x) = x
     coZero().coEven() = true()
     coZero().coOdd() = false()
 
-function coSucc(CoNat[]) : CoNat[] where
+function coSucc(CoNat) : CoNat where
     coSucc(s).coAdd(x) = s.coAdd(coSucc(x))
     coSucc(s).coEven() = s.coOdd()  
     coSucc(s).coOdd() = s.coEven()

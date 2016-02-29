@@ -13,15 +13,15 @@ import Uroboro.Location
 
 -- Type
 data Tau = Tau { 
-      tauLoc :: Location
+      tauLoc :: Hidden Location
     , tauTau :: String
     } deriving (Show)
 instance Eq Tau where
     Tau _ x1 == Tau _ x2  = x1 == x2
 
 data Type 
-    = Typevar Location String   -- typevariable
-    | TypeT Location Tau TypeApplications  --TauAps
+    = Typevar (Hidden Location) String   -- typevariable
+    | TypeT (Hidden Location) Tau TypeApplications  --TauAps
         deriving (Show)
 instance Eq Type where
     Typevar _ x1 == Typevar _ x2        = x1 == x2
@@ -29,7 +29,7 @@ instance Eq Type where
     _ == _                              = False        
 
 data Abs = Abs {
-    absLoc :: Location -- location in source
+    absLoc :: Hidden Location -- location in source
   , absAbs :: String   -- abstraction variable
   } deriving (Show)
 instance Eq Abs where
@@ -39,7 +39,7 @@ type TypeAbstractions = [Abs]
 type TypeApplications = [Type]
  
 data Identifier = Identifier {
-      idLoc :: Location 
+      idLoc :: Hidden Location 
     , idId :: String 
     } deriving (Show)
 instance Eq Identifier where
@@ -57,7 +57,7 @@ type Context = [Frame]
 
 -- TODO: rename sigIsS0
 data Sig = Sig {
-    sigLoc  :: Location   -- location in source
+    sigLoc  :: Hidden Location   -- location in source
   , sigName :: Identifier -- identifier (con, fun-)
   , sigArgs :: [Type]     -- args (fst, ...)
   , sigRet  :: Type       -- return type
@@ -93,7 +93,7 @@ type Rule = (TypeAbstractions, Cop, Exp)
 
 -- |Copattern with type annotations.
 data Cop = Cop {
-    copLoc  :: Location -- location in source
+    copLoc  :: Hidden Location -- location in source
   , copIdTy :: IdType   -- name with type      
   , copArgs :: [Pat]    -- args 
   , copNature :: CopNature
@@ -110,7 +110,7 @@ instance Eq CopNature where
 
 -- |Pattern with type annotations.
 data Pat = Pat {
-      patLoc :: Location 
+      patLoc :: Hidden Location 
     , patIdTy :: IdType
     , patNature :: PatNature
 } deriving (Show)
@@ -127,7 +127,7 @@ instance Eq PatNature where
 
 -- |Expression with type annotations.
 data Exp = Exp { 
-      expLoc :: Location 
+      expLoc :: Hidden Location 
     , expIdTy :: IdType
     , expNature :: ExpNature
 } deriving (Show)
@@ -166,8 +166,8 @@ emptyProgram sgm = Program sgm []
 -- lookup name in sigmas type names and signature names
 lookupNameForLoc :: Sigma -> String -> [Location]
 lookupNameForLoc sgm name = 
-    map (\(TauAbs t a) -> tauLoc t) (filter (\tauabs -> name == tauTau (tauAbsTau tauabs)) (sgmTypeNames sgm)) 
-    ++ map sigLoc (filter (\sig -> name == idId (sigName sig)) (sgmSigs sgm))         
+    map (\(TauAbs t a) -> unhide (tauLoc t)) (filter (\tauabs -> name == tauTau (tauAbsTau tauabs)) (sgmTypeNames sgm)) 
+    ++ map (unhide . sigLoc) (filter (\sig -> name == idId (sigName sig)) (sgmSigs sgm))         
 
 -- lookup type stored in sigma
 lookupTauAbs :: Sigma -> Tau -> Maybe [TauAbs] 

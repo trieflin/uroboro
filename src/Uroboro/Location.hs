@@ -22,7 +22,7 @@ instance Show Location where
       , show column
       ]
 
-newtype Hidden a = Hidden a     
+newtype Hidden a = Hidden { unhide :: a }    
 instance Eq (Hidden a) where
     Hidden x == Hidden y = True
 instance Show a => Show (Hidden a) where

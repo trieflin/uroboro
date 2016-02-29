@@ -4,17 +4,17 @@ Requires from lib: nat, stream, function
 Self-contained Fibonacci number generator.
 -}
 
-function addFun() : Function2[Nat[],Nat[],Nat[]] where
-    addFun().apply2[Nat[],Nat[],Nat[]](a, zero())  = a
-    addFun().apply2[Nat[],Nat[],Nat[]](a, succ(b)) = addFun().apply2[Nat[],Nat[],Nat[]](succ(a), b)
+function addFun() : Function2[Nat,Nat,Nat] where
+    addFun().apply2[Nat,Nat,Nat](a, zero())  = a
+    addFun().apply2[Nat,Nat,Nat](a, succ(b)) = addFun().apply2[Nat,Nat,Nat](succ(a), b)
 
-function fib(): Stream[Nat[]] where
-    fib().headc[Nat[]]() = zero()
-    fib().tailc[Nat[]]().headc[Nat[]]() = succ(zero())
-    fib().tailc[Nat[]]().tailc[Nat[]]() = zipWithStream[Nat[],Nat[],Nat[]](addFun(), fib(), fib().tailc[Nat[]]())
+function fib(): Stream[Nat] where
+    fib().headc[Nat]() = zero()
+    fib().tailc[Nat]().headc[Nat]() = succ(zero())
+    fib().tailc[Nat]().tailc[Nat]() = zipWithStream[Nat,Nat,Nat](addFun(), fib(), fib()).tailc[Nat]()
     
-function add1Fun(): Function[Nat[],Nat[]] where
-    add1Fun().apply[Nat[],Nat[]](x) = succ(x)
+function add1Fun(): Function[Nat,Nat] where
+    add1Fun().apply[Nat,Nat](x) = succ(x)
 
-function test(): List[Nat[]] where
-    test() = map[Nat[],Nat[],Nat[]](add1Fun(), takeN[Nat[]](fib(), succ(succ(succ(succ(zero()))))))
+function test(): List[Nat] where
+    test() = map[Nat,Nat,Nat](add1Fun(), takeN[Nat](fib(), succ(succ(succ(succ(zero()))))))

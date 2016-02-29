@@ -13,11 +13,10 @@ brackets :: String -> String
 brackets s = "[" ++ s ++ "]"
 
 commaSep :: [String] -> String
-commaSep ss = intercalate ", " ss
+commaSep = intercalate ", " -- sls
 
 args :: [Exp] -> String
 args es = parens (commaSep (map render es))
-
 
 render :: Exp -> String
 render (Exp _ (Identifier _ n,t) VarExp) = n

@@ -26,7 +26,7 @@ function <A> init(List[A]) : List[A] where
 
 --function <A> uncons(List[A]) : Maybe(A, List[A])
 
-function <A> take(Nat[], List[A]) : List[A] where
+function <A> take(Nat, List[A]) : List[A] where
     take(zero(), l) = empty[A]()
     take(succ(x), cons[A](h,tl)) = cons[A](h, take[A](x,tl))
 

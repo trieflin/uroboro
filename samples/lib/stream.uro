@@ -12,7 +12,7 @@ function <A,B,C> zipWithStream(Function2[A,B,C], Stream[A], Stream[B]) : Stream[
     zipWithStream(f, a, b).headc[C]() = f.apply2[A,B,C](a.headc[A](), b.headc[B]())
     zipWithStream(f, a, b).tailc[C]() = zipWithStream[A,B,C](f, a.tailc[A](), b.tailc[B]())
 
-function <A> takeN(Stream[A], Nat[]): List[A] where
+function <A> takeN(Stream[A], Nat): List[A] where
     takeN(stream, zero())  = empty[A]()
     takeN(stream, succ(n)) = cons[A](stream.headc[A](), takeN[A](stream.tailc[A](),n))
 

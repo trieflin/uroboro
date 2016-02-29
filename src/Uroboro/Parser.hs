@@ -94,7 +94,6 @@ parseCoPat = choice [try descop,appcop] <?> "copattern"
     descop = liftLoc (toDesCop Cop) ident <*> args parsePat <*> many1 (parseDApsCop DApsCop parsePat) <?> "destructor application" 
     appcop = liftLoc (toAppCop Cop) ident <*> args parsePat <?> "function/constructor application" 
 
-    parseDApsCop :: (Location -> Identifier -> TypeApplications -> [Pat] -> DApsCop) -> Parser Pat -> Parser DApsCop
     parseDApsCop make b  = dot *> liftLoc make ident <*> typeappopt <*> args b  <?> "dot application in left hand side of rule"
 
     toDesCop make loc ident pats dcops = make loc ident pats (DesCopNature dcops)
@@ -113,19 +112,18 @@ parsePat = choice [try con, var] <?> "pattern"
 parseExp :: Parser Exp
 parseExp = choice [des, toExp app, toExp var] <?> "expression" 
   where 
-    des = try (liftLoc DesExp (choice [app, var]) <*> many1 (dot *> liftLoc DExp ident <*> typeappopt <*> args expF) <?> "des-exp")
-    app = try (liftLoc AppExp ident <*> typeappopt <*> args expF <?> "app-exp")
+    des = try (liftLoc DesExp (choice [app, var]) <*> many1 (dot *> liftLoc DExp ident <*> typeappopt <*> args parseExp) <?> "des-exp")
+    app = try (liftLoc AppExp ident <*> typeappopt <*> args parseExp <?> "app-exp")
     var = liftLoc VarExp ident <?> "var-exp"
     
     toExp = liftM Expr 
-    expF = choice [toExp app, toExp var]
  
    
 -- |Variant of liftM that also stores the current location
 -- constructs intern types for external abstract syntax tree
 -- fetching sourcepos for exception messages
-liftLoc :: (Location -> a -> b) -> Parser a -> Parser b
+liftLoc :: (Hidden Location -> a -> b) -> Parser a -> Parser b
 liftLoc dtcon parser = do
     pos <- getPosition
     arg <- parser -- Parser returns its argument
-    return (dtcon (convertLocation pos) arg) 
+    return (dtcon (Hidden (convertLocation pos)) arg) 

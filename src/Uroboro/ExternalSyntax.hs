@@ -5,44 +5,34 @@ module Uroboro.ExternalSyntax where
 import Uroboro.Location
 
 data Tau = Tau {
-    tauLoc :: Location         -- location in source
+    tauLoc :: Hidden Location         -- location in source
   , tauTau :: String              -- name of tau 
-  } deriving (Show)
-instance Eq Tau where
-    Tau _ x == Tau _ y = x == y 
-    
+  } deriving (Show, Eq)
+  
 data Identifier = Identifier {
-    idLoc :: Location -- location in source
+    idLoc :: Hidden Location -- location in source
   , idId  :: String   -- name of identifier    
-  } deriving (Show)
-instance Eq Identifier where
-    Identifier _ x == Identifier _ y = x == y 
-
+  } deriving (Show, Eq)
+  
 data Abs = Abs {
-    absLoc :: Location -- location in source
+    absLoc :: Hidden Location -- location in source
   , absAbs :: String   -- abstraction variable
-  } deriving (Show)
-instance Eq Abs where
-    Abs _ x == Abs _ y = x == y     
-    
+  } deriving (Show, Eq)
+  
 type TypeAbstractions = [Abs]    
 type TypeApplications = [Type]
 
 data Type 
-    = TypeVar Location String
-    | TypeT Location Tau TypeApplications 
-    deriving (Show)
-instance Eq Type where
-    TypeVar _ x1 == TypeVar _ x2   = x1 == x2
-    TypeT _ x1 a1 == TypeT _ x2 a2 = x1 == x2 && a1 == a2
-    _ == _                         = False
-
+    = TypeVar (Hidden Location) String
+    | TypeT (Hidden Location) Tau TypeApplications 
+    deriving (Show, Eq)
+    
 -- |Definition.
 data Def = Def { 
-    defLoc  :: Location
+    defLoc  :: Hidden Location
   , defAbs  :: TypeAbstractions
   , defNature :: DefNature
-} deriving (Show)
+} deriving (Show, Eq)
 
 data DefNature  
     -- |Data type.
@@ -51,11 +41,11 @@ data DefNature
     | CodDefNature Tau [DesSig]
     -- |Function 
     | FunDefNature FunSig [Rule] 
-    deriving (Show)
+    deriving (Show, Eq)
 
 -- | Signature.
 class Sig a where 
-    sigLoc    :: a -> Location
+    sigLoc    :: a -> Hidden Location
     sigId     :: a -> Identifier
     sigArgs   :: a -> [Type] 
     sigRet    :: a -> Type
@@ -68,12 +58,12 @@ data SigNature
     deriving (Show, Eq)
 
 data ConSig = ConSig {
-    cSigLoc    :: Location
+    cSigLoc    :: Hidden Location
   , cSigId     :: Identifier
   , cSigArgs   :: [Type] 
   , cSigRet    :: Type
   , cSigNature :: SigNature -- ConSigNature
-  } deriving (Show)
+  } deriving (Show,Eq)
 instance Sig ConSig where
     sigLoc    = cSigLoc
     sigId     = cSigId
@@ -82,12 +72,12 @@ instance Sig ConSig where
     sigNature = cSigNature
  
 data DesSig = DesSig {
-    dSigLoc    :: Location
+    dSigLoc    :: Hidden Location
   , dSigId     :: Identifier
   , dSigArgs   :: [Type] 
   , dSigRet    :: Type
   , dSigNature :: SigNature -- DesSigNature TauAps
-  } deriving (Show)
+  } deriving (Show,Eq)
 instance Sig DesSig where
     sigLoc = dSigLoc
     sigId = dSigId
@@ -96,12 +86,12 @@ instance Sig DesSig where
     sigNature = dSigNature
       
 data FunSig = FunSig {
-    fSigLoc  :: Location
+    fSigLoc  :: Hidden Location
   , fSigId   :: Identifier
   , fSigArgs :: [Type] 
   , fSigRet  :: Type
   , fSigNature :: SigNature -- FunSigNature
-  } deriving (Show)
+  } deriving (Show,Eq)
 instance Sig FunSig where
     sigLoc = fSigLoc
     sigId = fSigId
@@ -111,21 +101,19 @@ instance Sig FunSig where
     
 -- |Part of a function definition.
 data Rule = Rule {
-    ruleLoc :: Location -- location in source
+    ruleLoc :: Hidden Location -- location in source
   , ruleCop :: Cop      -- copattern (lhs)        
   , ruleExp :: Exp      -- expression (rhs)
-  } deriving (Show)
+  } deriving (Show,Eq)
 
 -- |Copattern.
 -- f(args_f).d_1(args_d1). ... .d_n(args_dn)
 data Cop = Cop {
-    copLoc    :: Location   -- location in source
+    copLoc    :: Hidden Location   -- location in source
   , copId     :: Identifier -- name       
   , copArgs   :: [Pat]      -- args 
   , copNature :: CopNature
-}  deriving (Show)
-instance Eq Cop where
-    Cop _ t1 a1 d1 == Cop _ t2 a2 d2 = t1 == t2 && a1 == a2 && d1 == d2
+}  deriving (Show,Eq)
 
 data CopNature 
     = AppCopNature
@@ -133,42 +121,36 @@ data CopNature
     deriving (Show, Eq)
 
 data DApsCop = DApsCop {
-    dapsLoc   :: Location 
+    dapsLoc   :: Hidden Location 
   , dapsId    :: Identifier
   , dapsAps   :: TypeApplications         
   , dapsPats  :: [Pat]    -- args
-  } deriving (Show)
-instance Eq DApsCop where
-    DApsCop _ t1 a1 p1 == DApsCop _ t2 a2 p2 = t1 == t2 && a1 == a2 && p1 == p2   
-    
+  } deriving (Show, Eq)
+  
 -- |Pattern.
 data Pat -- concerning args in f.d_1. ... .d_n(args)
     -- |Variable pattern.
-    = VarPat Location Identifier
-    -- |Application pattern (constructor/positive? functions)
-    | AppPat Location Identifier TypeApplications [Pat] 
-    deriving (Show)
-instance Eq Pat where
-    VarPat _ x1 == VarPat _ x2 = x1 == x2 
-    AppPat _ x1 a1 p1 == AppPat _ x2 a2 p2 = x1 == x2 && a1 == a2 && p1 == p2
-    _ == _ = False     
+    = VarPat (Hidden Location) Identifier
+    -- |Application pattern (constructor/functions)
+    | AppPat (Hidden Location) Identifier TypeApplications [Pat] 
+    deriving (Show, Eq)
 
--- |Expression (Term).
+-- |Expression.
 data ExpF
     -- |Variable.
-    = VarExp Location Identifier
+    = VarExp (Hidden Location) Identifier
     -- |Constructor or function application.
-    | AppExp Location Identifier TypeApplications [Exp]
-    deriving (Show)
+    | AppExp (Hidden Location) Identifier TypeApplications [Exp]
+    deriving (Show, Eq)
 
 data Exp =
+    -- |Variable, constructor or function application
     Expr ExpF   
-    -- |Destructor application (Selection).
-    -- Exp.IdAps(Exp*) 
-    | DesExp Location ExpF [DExp] 
-    deriving (Show)
+    -- |Destructor application (Selection) with the form expF.IdAps(Exp*)* 
+    | DesExp (Hidden Location) ExpF [DExp] 
+    deriving (Show, Eq)
 
-data DExp = DExp Location Identifier TypeApplications [Exp] deriving (Show)
+data DExp = DExp (Hidden Location) Identifier TypeApplications [Exp] deriving (Show, Eq)
 
 
 checkNeg :: Rule -> Bool

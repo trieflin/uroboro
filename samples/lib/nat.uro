@@ -20,3 +20,7 @@ function even(Nat): Bool where
 function odd(Nat): Bool where
 	odd(zero()) = false()
 	odd(succ(n)) = even(n)
+	
+function isZero(Nat) : Bool where
+    isZero(zero()) = true()
+    isZero(succ(n)) = false()
