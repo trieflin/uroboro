@@ -110,7 +110,7 @@ sFunNegPoly = "function <A,B> idFst(A, B) : List[A] where"
 
 sNonsensePoly = "function <A,T,Z> xy(C, B[T]) : X where"
                 ++ " xy1zz0() = a1[D,E,F](x)"
-listDefPoly =  [ sDataPoly, sCodPoly, sFunPoly, sFunsNegPoly, sNonsensePoly ]
+listDefPoly =  [ sDataPoly, sCodPoly, sFunPoly, sFunNegPoly, sNonsensePoly ]
 
 
 uroparseSat parser ls = mapM_ (\x -> parser `shouldAccept` x) ls
@@ -184,11 +184,11 @@ spec = do
                       (CodDefNature (Tau _"Stream") 
                                     [DesSig _ (Identifier _ "head") [] (TypeVar _ "T") (DesSigNature (TypeT _ (Tau _"Stream") [TypeVar _ "T"])) ])] -> True
               _ -> False)
-    describe "polymorphism"
+    describe "polymorphism" $ do
         it "accepts wellformed definitions" $ 
             uroparseSat parseDef listDefPoly
         it "rejects" $ 
-            uroparseRej parseRule listSyntaxErrPoly
+            uroparseRej parseDef listSyntaxErrPoly
     describe "command line" $ do
         it "ignores whitespace" $ 
             parseExpression "" "  x  " `shouldSatisfy` (\x -> case x of
