@@ -19,7 +19,7 @@ parseFiles paths = do
     lol <- forM paths $ \path -> do
         input <- readFile path
         case uroparse (exactly parseDef) path input of
-            Left _ -> fail "Parser"
+            Left l -> fail $ "Parser (" ++ show l ++ ")"
             Right defs -> return defs
     case typecheck (concat lol) of 
             Left _ -> fail "Checker"
@@ -30,10 +30,11 @@ prelude = parseFiles uroLib
 
 
 --sFailCodDes = "codata <T> Stream[T] where Stream.head() :: A"
-
+--function fib(): Stream[Nat] where
+--    fib().headc[]() = zero()
  
 -- |Context using prelude
-locUndef = MakeLocation "undef" 0 0
+locUndef = Hidden (MakeLocation "undef" 0 0)
 c :: Context
 c = [ TermBind (Identifier locUndef "i", TypeT locUndef (Tau locUndef "Int") [])
     , TermBind (Identifier locUndef "f", TypeT locUndef (Tau locUndef "IntToInt") [])
@@ -46,7 +47,6 @@ c = [ TermBind (Identifier locUndef "i", TypeT locUndef (Tau locUndef "Int") [])
 
 tyErrAbsMsg           = "Shadowed type abstractions "
 tyErrTauIsTypevarMsg  = "Mismatch between type variable "
-tyErrMultDeclMsg      = "Multiple declarations of "
 tyErrDuplTySigsMsg    = "Duplicate type signatures for " 
 tyErrDefMismatchMsg   = "Definition Mismatch in " 
 tyErrTyLenMismatchMsg = "Typing Argument Mismatch, expected "
@@ -68,7 +68,7 @@ spec = do
                 [ "data A where a(): A"
                 , "data A where b(): A"
                 ]
-            foldM fillSigma emptySigma defs `shouldFail` tyErrMultDeclMsg
+            foldM fillSigma emptySigma defs `shouldFail` tyErrDuplTySigsMsg
             
             defs' <- parseString parseDef $ unlines
                 [ "data A where a(): A" 
@@ -86,7 +86,7 @@ spec = do
                 [ "codata A where A.a(): Nat"
                 , "codata A where A.b(): A"
                 ]
-            foldM fillSigma emptySigma defs `shouldFail` tyErrMultDeclMsg
+            foldM fillSigma emptySigma defs `shouldFail` tyErrDuplTySigsMsg
             
             defs' <- parseString parseDef $ unlines
                 [ "codata A where A.a(): Nat" 
@@ -104,13 +104,13 @@ spec = do
                 [ "function a() : Nat where "
                 , "function a() : Nat where "
                 ]
-            foldM fillSigma emptySigma defs `shouldFail` tyErrMultDeclMsg
+            foldM fillSigma emptySigma defs `shouldFail` tyErrDuplTySigsMsg
             
             defs' <- parseString parseDef $ unlines
                 [ "function a() : Nat where"
                 , "function a() : Bool where"
                 ]
-            foldM fillSigma emptySigma defs' `shouldFail` tyErrMultDeclMsg
+            foldM fillSigma emptySigma defs' `shouldFail` tyErrDuplTySigsMsg
             
 -- if overloading is desired -> accept this test and expand it            
             defs' <- parseString parseDef $ unlines
@@ -118,7 +118,7 @@ spec = do
                 , "function a() : Nat where "
                 , "function a(Bool) : Bool where"
                 ]
-            foldM fillSigma emptySigma defs' `shouldFail` tyErrMultDeclMsg
+            foldM fillSigma emptySigma defs' `shouldFail` tyErrDuplTySigsMsg
     describe "prevent mismatches " $ do
         it "checks return types for data" $ do
             defs <- parseString parseDef $ unlines
@@ -187,7 +187,7 @@ spec = do
         let stream = "codata StreamOfInt where StreamOfInt.headc(): Int"
         it "prevents duplicates" $ do
             defs <- parseString parseDef $ unlines [stream, stream]
-            foldM fillSigma emptySigma defs `shouldFail` tyErrMultDeclMsg
+            foldM fillSigma emptySigma defs `shouldFail` tyErrDuplTySigsMsg
         it "checks argument types" $ do
             x:_ <- parseString parseDef "codata IntToInt where IntToInt.apply(Int): Int"
             sgm <- eitherIO $ fillSigma emptySigma x 
@@ -298,8 +298,8 @@ spec = do
         it "TODO" $ do
             p <- prelude    
             defs <- parseString parseDef $ unlines
-                [ "function <X> id(X) : X where id(x) = x"
-                , "function natId(Nat) : Nat where natId(x) = id[Nat](x)"
+                [ "function <X> myid(X) : X where myid(x) = x"
+                , "function natId(Nat) : Nat where natId(x) = myid[Nat](x)"
                 ]
             print "hallo1" 
             print  $ foldM fillSigma (prgSigma p) defs   

@@ -19,9 +19,11 @@ sFunNested = "f(b())"  -- cop, pat, expr
 sDesApp1 = "fd().d()" -- cop, expr
 sDesApp2 = "fd(a,b).d0().d2(c,d)" -- cop, expr
 sVarDesApp = "x.fd()" -- expr
+sDesExp = "f(a).hc(b,ca.des())" -- expr
 
--- these cannot be parsed in general
-sFailArg = "f(a).hc(b,ca.des())" -- negative argument
+-- cannot be parsed
+sFailArg = "f(a).x" 
+
 
 -- syntactic errors
 sFailL = "f(a"
@@ -68,7 +70,7 @@ listCop = listPatCop++ [sDesApp1, sDesApp2]
 listNotCop = sVar : listNotPatNotCop
 
 -- exp
-listExp = sVarDesApp : (listPat ++ listCop)
+listExp = sDesExp : sVarDesApp : (listPat ++ listCop)
 listNotExp = [sFailArg]
 
 -- parseRule
