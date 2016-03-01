@@ -28,12 +28,12 @@ shadowedTauSig sgm def@(EST.Def loc abss nature) = do
             EST.DatDefNature tau sigs  -> (calcShadowedList tau, foldM (shadowedSig abss True) (addTauToSgm tau) sigs, EST.tauTau tau)
             EST.CodDefNature tau sigs  -> (calcShadowedList tau, foldM (shadowedSig abss False) (addTauToSgm tau) sigs, EST.tauTau tau)
             EST.FunDefNature sig rules -> ([], shadowedSig abss (any EST.checkNeg rules) sgm sig, EST.idId (EST.sigId sig))   
-    if not $ null shadowedList 
+    if not $ null shadowedList -- tau is not already a type
     then tyErrDuplTySigs loc name shadowedList
     else sgm0
     
 shadowedSig :: EST.Sig a => EST.TypeAbstractions -> Bool -> Sigma -> a -> Either Error Sigma
-shadowedSig abss isS0 sgm estSig
+shadowedSig abss isS0 sgm estSig -- unique signature names
     | not $ null shadowedList = tyErrDuplTySigs (EST.sigLoc estSig) (EST.sigId estSig) shadowedList
     | otherwise = return sgm{ sgmSigs = toSig isS0 abss estSig : sgmSigs sgm }
     where
@@ -46,6 +46,8 @@ mismatch' sgm def
         EST.Def loc abss (EST.CodDefNature tau sigs) -> mis (loc, fromTauAbs2Type tau abss, map toType [t | EST.DesSigNature t <- map EST.dSigNature sigs])
         EST.Def loc _ (EST.FunDefNature (EST.FunSig _ ident _ _ _) ruls) -> mis (loc, ident, map (EST.copId . EST.ruleCop) ruls)
     where 
+        fromTauAbs2Type estTau abss = TypeT (EST.tauLoc estTau) (toTau estTau) (map (fromAbs2Typevar . toAbs) abss)
+        abs2aps (EST.Abs l a) = Typevar l a 
         mis :: Eq a => Show a => (Hidden Location , a , [a]) -> Either Error Sigma
         mis(loc, fact, check) = let mismatchls = filter (/= fact) check in
                                 if null mismatchls

@@ -15,35 +15,25 @@ import Uroboro.Location
 data Tau = Tau { 
       tauLoc :: Hidden Location
     , tauTau :: String
-    } deriving (Show)
-instance Eq Tau where
-    Tau _ x1 == Tau _ x2  = x1 == x2
-
+    } deriving (Show, Eq)
+    
 data Type 
     = Typevar (Hidden Location) String   -- typevariable
     | TypeT (Hidden Location) Tau TypeApplications  --TauAps
-        deriving (Show)
-instance Eq Type where
-    Typevar _ x1 == Typevar _ x2        = x1 == x2
-    TypeT _ x1 aps1  == TypeT _ x2 aps2 = x1 == x2 && aps1 == aps2
-    _ == _                              = False        
-
+        deriving (Show, Eq)
+        
 data Abs = Abs {
     absLoc :: Hidden Location -- location in source
   , absAbs :: String   -- abstraction variable
-  } deriving (Show)
-instance Eq Abs where
-    Abs {absAbs = x} == Abs {absAbs = y} = x == y     
-    
+  } deriving (Show, Eq)
+  
 type TypeAbstractions = [Abs]    
 type TypeApplications = [Type]
  
 data Identifier = Identifier {
       idLoc :: Hidden Location 
     , idId :: String 
-    } deriving (Show)
-instance Eq Identifier where
-    Identifier _ x1 == Identifier _ x2  = x1 == x2
+    } deriving (Show, Eq)
 
 type IdType = (Identifier, Type)
 
@@ -64,22 +54,21 @@ data Sig = Sig {
   , sigNature :: TypeNature   -- pos/neg
   , sigIsS0 :: Bool       -- isSig0?
   , sigAbs  :: TypeAbstractions
-} deriving (Show)
+} deriving (Show,Eq)
 
-data TypeNature = Pos
+data TypeNature 
+    = Pos
     | Neg deriving (Show, Eq)
 
 data TauAbs = TauAbs {
     tauAbsTau :: Tau              -- name of tau 
   , tauAbsAbs :: TypeAbstractions -- forall abstractions
-  } deriving (Show)
-instance Eq TauAbs where
-    TauAbs {tauAbsTau = t1, tauAbsAbs = a1} == TauAbs {tauAbsTau = t2, tauAbsAbs = a2} = t1 == t2 && a1 == a2   
+  } deriving (Show, Eq)
 
 data Sigma = Sigma {
       sgmTypeNames :: [TauAbs]  
     , sgmSigs   :: [Sig]
-} deriving (Show)
+} deriving (Show,Eq)
 
 
 -- Program
@@ -87,7 +76,7 @@ data Program = Program {
       prgSigma    :: Sigma 
     , prgRules    :: [Rule]
     --, main :: Rule
-    } deriving (Show)
+    } deriving (Show,Eq)
 
 type Rule = (TypeAbstractions, Cop, Exp)
 
@@ -97,53 +86,36 @@ data Cop = Cop {
   , copIdTy :: IdType   -- name with type      
   , copArgs :: [Pat]    -- args 
   , copNature :: CopNature
-} deriving (Show)
-instance Eq Cop where
-    Cop _ x1 a1 k1 == Cop _ x2 a2 k2 = x1 == x2 && a1 == a2 && k1 == k2
+} deriving (Show, Eq)
 
-data CopNature = AppCop
-    | DesCop [Cop] deriving (Show)
-instance Eq CopNature where
-    AppCop == AppCop             = True
-    DesCop cops1 == DesCop cops2 = cops1 == cops2
-    _ == _                       = False
+data CopNature 
+    = AppCop
+    | DesCop [Cop] deriving (Show, Eq)
 
 -- |Pattern with type annotations.
 data Pat = Pat {
       patLoc :: Hidden Location 
     , patIdTy :: IdType
     , patNature :: PatNature
-} deriving (Show)
-instance Eq Pat where
-    Pat _ x1 k1 == Pat _ x2 k2 = x1 == x2 && k1 == k2
+} deriving (Show,Eq)
 
-data PatNature = VarPat
-    | AppPat [Pat] deriving (Show)
-instance Eq PatNature where
-    VarPat == VarPat         = True
-    AppPat pats1 == AppPat pats2 = pats1 == pats2
-    _ == _                   = False
-
+data PatNature 
+    = VarPat
+    | AppPat [Pat] deriving (Show,Eq)
+    
 
 -- |Expression with type annotations.
 data Exp = Exp { 
       expLoc :: Hidden Location 
     , expIdTy :: IdType
     , expNature :: ExpNature
-} deriving (Show)
-instance Eq Exp where
-    Exp _ x1 k1 == Exp _ x2 k2 = x1 == x2 && k1 == k2
+} deriving (Show,Eq)
 
 data ExpNature = 
     -- |Variable.
     VarExp
     -- |Application (des-exp: size[exp] >= 1)
-    | SExp [Exp] deriving (Show)
-instance Eq ExpNature where
-    VarExp == VarExp         = True
-    SExp exps1 == SExp exps2 = exps1 == exps2
-    _ == _                   = False
-
+    | SExp [Exp] deriving (Show, Eq)
 
 -- |Start value for folds.
 emptyContext :: Context
@@ -217,8 +189,5 @@ lookupCtxTyBind ctx ident
         teBindLs = [(x,t) | TermBind (x,t) <- ctx, x == ident]
 
 -- type transformations
-tau2Type :: TauAbs -> Type
-tau2Type (TauAbs tau abss) = TypeT (tauLoc tau) tau (map fromAbs2Typevar abss)
-
 fromAbs2Typevar :: Abs -> Type
 fromAbs2Typevar (Abs loc abss)= Typevar loc abss
