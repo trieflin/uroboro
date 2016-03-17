@@ -17,4 +17,7 @@ function add1Fun(): Function[Nat,Nat] where
     add1Fun().apply[Nat,Nat](x) = succ(x)
 
 function test(): List[Nat] where
-    test() = map[Nat,Nat,Nat](add1Fun(), takeN[Nat](fib(), succ(succ(succ(succ(zero()))))))
+    test() = map[Nat,Nat](add1Fun(), takeN[Nat](fib(), succ(succ(succ(succ(zero()))))))
+
+function fun(Bool): Nat where
+    fun(a) = a

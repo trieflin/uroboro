@@ -1,8 +1,7 @@
+data A where
+  a() : A
+data B where
+  b(A) : B
 
-    
-data Tes where
-   tes0() : Tes
-   tes1(Tes) : Tes
-   
-function ab(Tes) : Tes where
-    ab(a) = ab(a)
+function fun(A) : B where
+  fun(a) = b(a)

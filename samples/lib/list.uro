@@ -58,7 +58,6 @@ function <A,B> map (Function[A, B], List[A]) : List[B] where
 function <A> reverse(List[A]) : List[A] where
     reverse(empty[A]()) = empty[A]()
     reverse(cons[A](x,xs)) = append[A](reverse[A](xs), cons[A](x,empty[A]()))
-    --foldl (flip (:)) []
     
 function <A,B> foldl(Function2[B,A,B], B, List[A]) : List[B] where    
 
